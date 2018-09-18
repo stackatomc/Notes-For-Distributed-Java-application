@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * @author MayerFang
  * @file Test01
- * @Description
+ * @Description 测试关于remove(int)和remove(E)
  * @date 2018/9/11
  */
 public class Test01 {

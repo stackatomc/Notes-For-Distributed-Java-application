@@ -46,7 +46,9 @@
 	- 判断对象是否存在其中contains(E)
 	- 排序（是使用Collection对象时经常要考虑的问题，主要取决于所采取的排序算法）
 
-### ArrayList
+---
+
+## ArrayList
 
 - 创建：
 	- 需要掌握ArrayList采用的是数组方式存放对象，初始化为大小为10的Object数组
@@ -72,3 +74,86 @@
 - 获取单个对象get(int)
 	- ArrayList先做数组范围的检测，然后即可直接返回对应位置的对象
 - 遍历对象
+	- 关于modCount,因此创建iterator到调用方法间若修改ArrayList会报异常；修改过集合大小，报ConcurrentModificationException，也关于next()方法都是线程不安全的涉及并发；modCount相等但get不到元素抛IndexOutOfBoundsException，在捕捉到IndexOutofBoundsException后再检查modCount，若相等则抛NoSuchElementException，否则抛ConcurrentModificationException
+		- ArrayList、LinkedList都有modCount变量，关于迭代器使用上用于判断创建迭代器时与调用迭代器方法时是否为同意modCount，若中间存在add等操作，会经过ensureCapacity方法进行modCount++的修改从而迭代器调用失败
+	
+	```
+    public void ensureCapacity(int minCapacity) {
+        int minExpand = (elementData != DEFAULTCAPACITY_EMPTY_ELEMENTDATA)
+            // any size if not default element table
+            ? 0
+            // larger than default for default empty table. It's already
+            // supposed to be at default size.
+            : DEFAULT_CAPACITY;
+
+        if (minCapacity > minExpand) {
+            ensureExplicitCapacity(minCapacity);
+        }
+    }
+
+    private void ensureCapacityInternal(int minCapacity) {
+        if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA) {
+            minCapacity = Math.max(DEFAULT_CAPACITY, minCapacity);
+        }
+
+        ensureExplicitCapacity(minCapacity);
+    }
+
+    private void ensureExplicitCapacity(int minCapacity) {
+        modCount++;
+
+        // overflow-conscious code
+        if (minCapacity - elementData.length > 0)
+            grow(minCapacity);
+    }
+	}
+	...
+	protected transient int modCount = 0;
+	```
+	- 而关于next()方法由AbstractList实现,通过get()方法，注意cursor和lastRet的变量取值
+	```
+	public E next() {
+            checkForComodification();
+            try {
+                int i = cursor;
+                E next = get(i);
+                lastRet = i;
+                cursor = i + 1;
+                return next;
+            } catch (IndexOutOfBoundsException e) {
+                checkForComodification();
+                throw new NoSuchElementException();
+            }
+        }
+	```
+	- 关于遍历的三种常用方法
+	```
+	/* 1. 标准使用Iterator遍历 */
+        Iterator<String> iterator=strArr.iterator();
+        while(iterator.hasNext()){
+            iterator.next();
+            iterator.remove();//1-1. 注意这里是remove掉最新next出来的，所以需要在remove前声明
+        }
+
+        /* 2. 使用foreach遍历 */
+        for(String strOnlyOne: strArr){
+            System.out.println(strOnlyOne);
+        }
+
+        /* 3. 根据数量判断输出 */
+        for(int i=0;i<strArr.size();i++){
+            iterator.next();
+            iterator.remove();
+        }
+	```
+	- 关于hasNext()方法，比较当前志向的数组位置是否和数组中已有元素大小相等，相等返回false，否则true
+	`public boolean hasNext() {return cursor != size;}`
+- 判断对象是否存在contains(E)
+	- contains做法为遍历整个ArrayList中已有的元素，若E为null则直接判断已有元素是否为null，若为null则直接返回true；若E不为null，则通过判断E.equals和元素是否相等，如相等则返回true
+- indexOf()和lastIndexOf()
+	- 是ArrayList中用于获取对象所在位置的方法，其中indexOf()是从前向后寻找，而lastIndexOf()是从后向前寻找
+- 注意要点总结
+	- ArrayList实现：基于数组、注意ensureCapacity方法的扩容方法、无容量的限制
+	- ArrayList插入、删除注意的问题：插入可能需要扩容、删除不会减小数组容量，可以调用ArrayList的trimToSize()
+	- ArrayList查找：要遍历数组，对于非null的元素采取equals的方式寻找
+	- ArrayList是非线程安全的
