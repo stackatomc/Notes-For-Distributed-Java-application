@@ -22,6 +22,9 @@ public class MyComparatorTest{
 //            System.out.println(current.getAge());
 //        }
 
+        //看什么看，装什么逼，明知道怎么才会好起来
+        //人真贱
+
         TreeSet ts2=new TreeSet(new MyComparator());
         ts2.add(new Student2(4));
         ts2.add(new Student2(5));
